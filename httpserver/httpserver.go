@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"net"
 	"net/http"
 	"os"
@@ -11,8 +12,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/ipoluianov/cetuspools/api"
 	"github.com/ipoluianov/cetuspools/logger"
+	"github.com/ipoluianov/cetuspools/system"
 )
 
 type Host struct {
@@ -37,6 +38,7 @@ func NewHttpServer() *HttpServer {
 func (c *HttpServer) Start() {
 	logger.Println("HttpServer start")
 	go c.thListenTLS()
+	system.Get().Start()
 }
 
 func (c *HttpServer) thListenTLS() {
@@ -57,7 +59,7 @@ func (c *HttpServer) thListenTLS() {
 
 	c.rTLS = mux.NewRouter()
 
-	c.rTLS.HandleFunc("/api/cetus", api.SuiPrice)
+	//c.rTLS.HandleFunc("/api/cetus", api.SuiPrice)
 
 	c.rTLS.NotFoundHandler = http.HandlerFunc(c.processFile)
 	c.srvTLS.Handler = c
@@ -118,11 +120,39 @@ func (c *HttpServer) processFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("CONTENT of " + r.URL.String() + getRealAddr(r)))
+	pathOfDataDirectory := CurrentExePath() + "/data"
+	if r.URL.Path == "/" {
+		files, err := os.ReadDir(pathOfDataDirectory)
+		if err != nil {
+			logger.Println("processFile", "os.ReadDir Error", err)
+			return
+		}
+
+		listOfFiles := make([]string, 0)
+		for _, file := range files {
+			listOfFiles = append(listOfFiles, file.Name())
+		}
+
+		filesAsJson, err := json.MarshalIndent(listOfFiles, "", "  ")
+		if err != nil {
+			logger.Println("processFile", "json.MarshalIndent Error", err)
+			return
+		}
+
+		w.Write(filesAsJson)
+	} else {
+		filePath := pathOfDataDirectory + r.URL.Path
+		fileContent, err := os.ReadFile(filePath)
+		if err != nil {
+			logger.Println("processFile", "os.ReadFile Error", err)
+			return
+		}
+
+		w.Write(fileContent)
+	}
 }
 
 func getRealAddr(r *http.Request) string {
-
 	remoteIP := ""
 	// the default is the originating ip. but we try to find better options because this is almost
 	// never the right IP
