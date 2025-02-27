@@ -10,6 +10,6 @@ func init() {
 }
 
 func SuiPrice(w http.ResponseWriter, r *http.Request) {
-	str := system.Get().CetusGetName()
+	str := system.Get().PoolsAsTable()
 	w.Write([]byte("SuiPrice:" + str))
 }

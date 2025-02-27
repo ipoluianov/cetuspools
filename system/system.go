@@ -23,6 +23,8 @@ type System struct {
 	mtx      sync.Mutex
 	stopping bool
 	Name     string
+
+	table *CetusPoolsTable
 }
 
 func NewSystem() *System {
@@ -43,6 +45,7 @@ func (c *System) Stop() {
 func (c *System) ThWork() {
 	for !c.stopping {
 		logger.Println("System working")
-		time.Sleep(1 * time.Second)
+		c.UpdateCetusPools()
+		time.Sleep(60 * time.Second)
 	}
 }

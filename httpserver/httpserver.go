@@ -56,7 +56,9 @@ func (c *HttpServer) thListenTLS() {
 	}
 
 	c.rTLS = mux.NewRouter()
+
 	c.rTLS.HandleFunc("/api/cetus", api.SuiPrice)
+
 	c.rTLS.NotFoundHandler = http.HandlerFunc(c.processFile)
 	c.srvTLS.Handler = c
 
